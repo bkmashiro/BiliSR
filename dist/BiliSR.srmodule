@@ -1,0 +1,18 @@
+#!name = BiliSR
+#!desc = Bilibili ad filtering for Shadowrocket: native splash/pause, selective homepage and video-page filters. Disable older BiliSR modules and overlapping filters.
+#!author = bkmashiro
+#!homepage = https://github.com/bkmashiro/BiliSR
+#!version = 0.3.0
+
+[Map Local]
+^https:\/\/(grpc\.biliapi\.net|app\.biliapi\.net|app\.bilibili\.com|app\.biliapi\.com)\/bilibili\.app\.viewunite\.v1\.View\/PlayPause$ data-type=base64 data="AAAAAAA=" status-code=200 header="Content-Type:application/grpc|Content-Length:5|grpc-status:0"
+^https:\/\/app\.(bilibili\.com|biliapi\.net|biliapi\.com)\/x\/v2\/splash\/list(?:\?[^#]*)?$ data-type=base64 data="eyJjb2RlIjowLCJtZXNzYWdlIjoiT0siLCJ0dGwiOjEsImRhdGEiOnsibWF4X3RpbWUiOjAsIm1pbl9pbnRlcnZhbCI6MCwicHVsbF9pbnRlcnZhbCI6NjAsImtlZXBfaWRzIjpbXSwic2hvdyI6W10sImxpc3QiOlt7fV0sInNwbGFzaF9yZXF1ZXN0X2lkIjoiIn19" status-code=200 header="Content-Type:application/json; charset=utf-8|Content-Length:150|Cache-Control:no-store"
+^https:\/\/app\.(bilibili\.com|biliapi\.net|biliapi\.com)\/x\/v2\/splash\/(show|brand\/list|event\/list2)(?:\?[^#]*)?$ data-type=base64 data="eyJjb2RlIjowLCJtZXNzYWdlIjoiT0siLCJ0dGwiOjEsImRhdGEiOnsic2hvdyI6W10sImV2ZW50X2xpc3QiOltdLCJwcmVsb2FkIjpbXX19" status-code=200 header="Content-Type:application/json; charset=utf-8|Content-Length:81|Cache-Control:no-store"
+
+[Script]
+BiliSR.Feed = type=http-response,pattern=^https:\/\/app\.(bilibili\.com|biliapi\.net|biliapi\.com)\/x\/v2\/feed\/index(?:\?[^#]*)?$,requires-body=1,max-size=4194304,engine=webview,script-path=https://bili-sr.yuzhes.com/bilisr-feed-v0.3.0.js
+BiliSR.View = type=http-response,pattern=^https:\/\/(grpc\.biliapi\.net|app\.biliapi\.net|app\.bilibili\.com|app\.biliapi\.com)\/bilibili\.app\.viewunite\.v1\.View\/(View|AIRelateAsync|RelatesFeed|ViewProgress)$,requires-body=1,binary-body-mode=1,max-size=262144,engine=webview,script-path=https://bili-sr.yuzhes.com/bilisr-view-v0.3.0.js
+
+[MITM]
+hostname = %APPEND% grpc.biliapi.net, app.bilibili.com, app.biliapi.net, app.biliapi.com
+h2 = true
