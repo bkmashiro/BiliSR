@@ -24,6 +24,7 @@ function invoke(path,data, options={}) {
   };
   runInNewContext(script,sandbox);
   assert.equal(count,1,'exactly one done()');
+  assert.deepEqual(logs,[],'video filter must be silent');
   return {result, logs};
 }
 function out(path,input,opts){let r=invoke(path,input,opts);return r.result.body?Buffer.from(r.result.body):Buffer.from(input);}

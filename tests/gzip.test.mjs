@@ -12,7 +12,7 @@ function invoke(data,extra={},method='View'){
  const headers={'content-type':'application/grpc','grpc-encoding':'gzip','Content-Length':String(data.length),...extra};
  const original=Buffer.from(data);
  runInNewContext(source,{$request:{url:'https://grpc.biliapi.net/bilibili.app.viewunite.v1.View/'+method,headers:{}},$response:{body:new Uint8Array(data),headers},$done:r=>done.push(r),console:{log:x=>logs.push(x)},Uint8Array,ArrayBuffer});
- assert.equal(done.length,1);assert.deepEqual(data,original);return {result:done[0],logs};
+ assert.equal(done.length,1);assert.deepEqual(logs,[],'gzip filter must be silent');assert.deepEqual(data,original);return {result:done[0],logs};
 }
 test('gzip View filters CM, emits uncompressed frame and consistent headers',()=>{
  const input=frame(gzipSync(Buffer.concat([opaque,ad])));
@@ -21,7 +21,7 @@ test('gzip View filters CM, emits uncompressed frame and consistent headers',()=
  assert.deepEqual(Buffer.from(result.body),frame(opaque,0));
  assert.equal(result.headers['Content-Length'],String(opaque.length+5));
  assert.equal(Object.keys(result.headers).some(k=>k.toLowerCase()==='grpc-encoding'),false);
- assert.ok(logs.some(l=>l.includes('filtered View')));
+ assert.deepEqual(logs,[]);
 });
 test('unchanged gzip is preserved byte-for-byte with original headers',()=>{
  assert.equal(Object.keys(invoke(frame(gzipSync(opaque))).result).length,0);
@@ -43,7 +43,7 @@ test('oversized decoded message is rejected even when footer lies',()=>{
  for(const lie of [false,true]){
   const z=Buffer.from(zip);if(lie)z.writeUInt32LE(8,z.length-4);
   const {result,logs}=invoke(frame(z));assert.equal(Object.keys(result).length,0);
-  assert.ok(logs.some(l=>/limit|large/.test(l)),'must report limit rejection');
+  assert.deepEqual(logs,[],'oversized input is rejected silently');
  }
 });
 test('gzip filtering works across all remaining supported methods',()=>{

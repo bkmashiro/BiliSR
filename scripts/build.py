@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = '0.3.0'
+VERSION = '0.3.1'
 DEFAULT_BASE = 'https://bili-sr.yuzhes.com'
 APP = r'app\.(bilibili\.com|biliapi\.net|biliapi\.com)'
 GRPC = r'(grpc\.biliapi\.net|app\.biliapi\.net|app\.bilibili\.com|app\.biliapi\.com)'

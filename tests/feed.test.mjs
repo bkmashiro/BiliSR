@@ -7,7 +7,7 @@ const base='https://app.bilibili.com';
 function call(path,body,options={}){
  const raw=Object.hasOwn(options,'rawBody')?options.rawBody:(typeof body==='string'?body:JSON.stringify(body)),done=[],logs=[];
  runInNewContext(src,{$request:{url:(options.host||base)+path},$response:{body:raw,headers:{'Content-Type':'application/json','Content-Length':'100','Content-Encoding':'gzip',ETag:'old','X-Preserve':'yes'},status:200},$done:r=>done.push(r),console:{log:x=>logs.push(x)}});
- assert.equal(done.length,1);return {r:done[0],logs};
+ assert.equal(done.length,1);assert.deepEqual(logs,[],'feed must be silent');return {r:done[0],logs};
 }
 function result(path,body){const {r}=call(path,body);assert.ok(r.body,'response should be filtered');return JSON.parse(r.body);}
 const normal={card_type:'small_cover_v9',card_goto:'av',title:'normal',ad_info:null};
@@ -29,15 +29,14 @@ test('empty ad-only carousel is removed',()=>{
 test('changed JSON drops stale encoding, length and cache validator headers',()=>{
  const {r,logs}=call('/x/v2/feed/index',{code:0,data:{items:[{card_type:'cm_v1',card_goto:'ad_web_s'},normal]}});
  assert.ok(r.body);for(const k of ['Content-Length','Content-Encoding','ETag'])assert.equal(r.headers[k],undefined);
- assert.equal(r.headers['X-Preserve'],'yes');assert.ok(logs.some(l=>l.includes('[BiliSR.Feed] filtered')));
+ assert.equal(r.headers['X-Preserve'],'yes');assert.deepEqual(logs,[]);
 });
-test('skip diagnostics distinguish non-text/missing/oversized without logging body content',()=>{
+test('non-text, missing and oversized bodies pass through silently',()=>{
  const secret='private-body-do-not-log';
  for(const rawBody of [new Uint8Array([1,2,3]),undefined,secret+' '.repeat(4194304)]) {
   const {r,logs}=call('/x/v2/feed/index',null,{rawBody});
   assert.equal(Object.keys(r).length,0);const log=logs.join('\n');
-  assert.ok(log.includes(typeof rawBody==='string'?'text over':'non-text body'));
-  assert.ok(log.includes('bodyType='));assert.ok(log.includes('Content-Encoding=gzip'));
+  assert.deepEqual(logs,[]);
   assert.ok(!log.includes(secret));
  }
 });

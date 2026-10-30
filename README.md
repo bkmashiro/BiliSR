@@ -36,7 +36,7 @@ https://bili-sr.yuzhes.com/BiliSR.srmodule
 
 如果出现卡顿、空白页或播放异常，先禁用本模块，重连并重启 App。报告问题时附客户端版本、广告位置及相关日志，不要提交 Cookie、令牌或完整请求头。
 
-日志前缀：`[BiliSR.Feed]`、`[BiliSR.View]`。`gzip decoded` 表示解压成功，`filtered` 表示修改了响应，`pass` 表示原样保留。
+发布脚本默认静默，不输出控制台日志或通知，也不收集响应诊断信息。Shadowrocket 自身仍可能显示脚本执行和请求规则记录，这些由客户端控制。
 
 ## 构建与测试
 
@@ -45,8 +45,8 @@ https://bili-sr.yuzhes.com/BiliSR.srmodule
 ```sh
 python3 scripts/build.py
 python3 -m unittest discover -s tests -p 'test_*.py' -v
-BILISR_BUNDLE=dist/bilisr-view-v0.3.0.js \
-BILISR_FEED_BUNDLE=dist/bilisr-feed-v0.3.0.js \
+BILISR_BUNDLE=dist/bilisr-view-v0.3.1.js \
+BILISR_FEED_BUNDLE=dist/bilisr-feed-v0.3.1.js \
 node --test tests/*.test.mjs
 ```
 

@@ -28,8 +28,6 @@ SOFTWARE.
  */
 (function () {
   'use strict';
-  var PREFIX='[BiliSR.Feed] ';
-  function log(s) { try { console.log(PREFIX+s); } catch (_) {} }
   function object(v) { return v && typeof v==='object' && !Array.isArray(v); }
   var result={};
   try {
@@ -38,20 +36,10 @@ SOFTWARE.
     var path=match[1],raw=$response.body;
     // Engineering caps: 4,194,304 JS string code units here; 4 MiB input bytes in the module.
     if(typeof raw!=='string' || raw.length>4194304) {
-      var alt=$response.bodyBytes;
-      var info=['bodyType='+Object.prototype.toString.call(raw),
-        'bodyLength='+(raw==null?'missing':(raw.byteLength==null?raw.length:raw.byteLength)),
-        'bodyBytesType='+Object.prototype.toString.call(alt),
-        'bodyBytesLength='+(alt==null?'missing':(alt.byteLength==null?alt.length:alt.byteLength)),
-        'status='+String($response.status||$response.statusCode||'unknown')];
-      Object.keys($response.headers||{}).forEach(function(key){
-        if(/^(content-type|content-encoding|content-length)$/i.test(key))info.push(key+'='+$response.headers[key]);
-      });
-      log('skip '+path+': '+(typeof raw==='string'?'text over 4194304-character limit':'non-text body')+' | '+info.join(' | '));
       $done({});return;
     }
     var doc=JSON.parse(raw);
-    if(!object(doc) || doc.code!==0 || !object(doc.data)) {log('pass '+path+': unknown/error schema');$done({});return;}
+    if(!object(doc) || doc.code!==0 || !object(doc.data)) { $done({}); return; }
     var data=doc.data,ads=0,banners=0;
     if(path==='/x/v2/feed/index' && Array.isArray(data.items)) {
       var before=data.items;
@@ -81,8 +69,7 @@ SOFTWARE.
         if(!/^(content-length|content-encoding|etag|content-md5)$/i.test(key)) headers[key]=$response.headers[key];
       });
       result={body:JSON.stringify(doc),headers:headers};
-      log('filtered '+path+' ads='+ads+' bannerAds='+banners);
-    } else log('pass '+path+': no known ads');
-  } catch(error) {log('safe pass-through: '+String(error&&error.message||error));}
+    }
+  } catch(error) { /* Preserve the original response on invalid input. */ }
   $done(result);
 })();

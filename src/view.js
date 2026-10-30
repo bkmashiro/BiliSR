@@ -16,13 +16,6 @@
   var MAX_BYTES = 262144;
   var MAX_FIELDS = 10000;
   var MAX_DEPTH = 10;
-  var CHANGED = 0;
-  var WARN_PREFIX = '[BiliSR.View] ';
-  function log(message) {
-    if (typeof console !== 'undefined' && typeof console.log === 'function') {
-      console.log(WARN_PREFIX + message);
-    }
-  }
 
   function bytesOf(value) {
     if (value instanceof Uint8Array) return value;
@@ -120,7 +113,6 @@
       }
     }
     if (changes === 0) return b;
-    CHANGED += changes;
     return concat(pieces);
   }
   function nested(parent, f, parentDepth, transform) {
@@ -246,7 +238,6 @@
     for(var p=0;p<z.length;p+=128) decoder.push(z.subarray(p,Math.min(p+128,z.length)),false);
     decoder.push(new Uint8Array(0),true);
     if(!ended || total!==expected || ((crc^0xffffffff)>>>0)!==little32(z,z.length-8)) throw new Error('gzip checksum/size mismatch');
-    log('gzip decoded '+z.length+' -> '+total+' bytes');
     return concat(parts);
   }
   function processFrame(original, method, encoding) {
@@ -256,7 +247,7 @@
     if (length !== original.length - 5) return null;
     var body = original.subarray(5), result;
     if (original[0] === 1) {
-      if (String(encoding).toLowerCase() !== 'gzip') { log('skip compressed frame: unsupported grpc-encoding'); return null; }
+      if (String(encoding).toLowerCase() !== 'gzip') { return null; }
       body = gunzipBounded(body);
     }
     switch (method) {
@@ -303,23 +294,19 @@
     if (!match) { $done({}); return; }
     var contentType = getHeader($response && $response.headers,'content-type');
     if (contentType && !/^application\/grpc(?:\+proto)?(?:;|$)/i.test(contentType)) {
-      log('skip ' + match[1] + ': unexpected content type'); $done({}); return;
+      $done({}); return;
     }
     var raw=bytesOf($response && $response.body);
     if (!raw) raw=bytesOf($response && $response.bodyBytes);
-    if (!raw) { log('skip '+match[1]+': no binary body'); $done({}); return; }
-    CHANGED=0;
+    if (!raw) { $done({}); return; }
     var changed=processFrame(raw,match[1],getHeader($response.headers,'grpc-encoding'));
     if (changed) {
-      log('filtered ' + match[1] + ' ('+raw.length+' -> '+changed.length+' bytes; fields='+CHANGED+')');
       // Shadowrocket/Surge binary-body-mode=1 expects Uint8Array in body.
       $done({body:changed,headers:statusHeaders($request.headers,$response.headers,changed.length)});
     } else {
-      log('pass ' + match[1] + ' ('+raw.length+' bytes; compressed/unknown/unchanged)');
       $done({});
     }
   } catch (e) {
-    log('safe pass-through after error: ' + String(e && e.message || e));
     $done({});
   }
 })();
